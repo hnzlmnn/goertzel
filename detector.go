@@ -38,24 +38,25 @@ func detectTone(pCtx context.Context, freq, sampleRate float64, minDuration time
 
 	var count int
 	var found bool
-	for b := range t.Blocks() {
-		if findingAbsence {
-			found = !b.Present
-		} else {
-			found = b.Present
-		}
+	for {
+		select {
+		case b := <- t.Blocks():
+			if findingAbsence {
+				found = !b.Present
+			} else {
+				found = b.Present
+			}
 
-		if found {
-			count++
-		} else {
-			count = 0
-		}
+			if found {
+				count++
+			} else {
+				count = 0
+			}
 
-		if count >= reqBlocks {
-			return true, nil
-		}
-
-		if ctx.Err() != nil {
+			if count >= reqBlocks {
+				return true, nil
+			}
+		case <-ctx.Done():
 			return
 		}
 	}
